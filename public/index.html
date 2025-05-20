@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Viewer - BASE Mainnet</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>NFT Viewer - BASE Mainnet</h1>
+        
+        <div class="search-box">
+            <input type="text" id="walletAddress" placeholder="Nhập địa chỉ ví (vd: 0x...)">
+            <button onclick="fetchNFTs()">Xem NFTs</button>
+        </div>
+
+        <div id="error" class="error"></div>
+        <div id="loading" class="loading">Đang tải...</div>
+
+        <div id="nftGrid" class="nft-grid"></div>
+    </div>
+
+    <script>
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const nftGrid = document.getElementById('nftGrid');
+        loading.style.display = 'none';
+
+        async function fetchNFTs() {
+            const walletAddress = document.getElementById('walletAddress').value;
+            if (!walletAddress) {
+                showError('Vui lòng nhập địa chỉ ví');
+                return;
+            }
+
+            try {
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                nftGrid.innerHTML = '';
+
+                const response = await fetch(`/api/nfts/${walletAddress}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayNFTs(data.nfts);
+                } else {
+                    showError(data.error);
+                }
+            } catch (err) {
+                showError('Có lỗi xảy ra khi lấy thông tin NFT');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayNFTs(nfts) {
+            if (nfts.length === 0) {
+                nftGrid.innerHTML = '<p class="no-nfts">Không tìm thấy NFT nào</p>';
+                return;
+            }
+
+            nfts.forEach(nft => {
+                const card = document.createElement('div');
+                card.className = 'nft-card';
+                
+                let content = '';
+                if (nft.image) {
+                    content += `<img src="${nft.image}" alt="${nft.name}" class="nft-image">`;
+                }
+                content += `
+                    <h3>${nft.name || `Token #${nft.tokenId}`}</h3>
+                    <p>Token ID: ${nft.tokenId}</p>
+                `;
+                if (nft.description) {
+                    content += `<p class="description">${nft.description}</p>`;
+                }
+                
+                card.innerHTML = content;
+                nftGrid.appendChild(card);
+            });
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
